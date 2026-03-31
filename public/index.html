@@ -277,6 +277,108 @@ mark { background: rgba(91,156,247,0.25); color: var(--accent); border-radius: 2
 .diff-line.removed .diff-text { color: #f7b0b0; }
 .diff-line.hunk .diff-text { color: var(--accent2); font-weight: 500; }
 
+/* =================== MINDMAP =================== */
+@keyframes mmFadeIn { from { opacity:0; transform:translate(-50%,-50%) scale(0.6); } to { opacity:1; transform:translate(-50%,-50%) scale(1); } }
+@keyframes mmDrawLine { to { stroke-dashoffset: 0; } }
+@keyframes mmPulseGlow { 0%,100% { filter: drop-shadow(0 0 4px var(--accent-glow)); } 50% { filter: drop-shadow(0 0 12px var(--accent-glow)); } }
+
+.mm-panel {
+  width: 420px; min-width: 420px; border-left: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+  display: flex; flex-direction: column; overflow: hidden; position: relative;
+  height: 100%;
+}
+.mm-header {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  font-size: 11px; color: var(--muted); font-weight: 600;
+  display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+  background: var(--surface2);
+}
+.mm-header .count { font-family: var(--mono); font-size: 9px; background: var(--surface4); padding: 1px 5px; border-radius: 3px; color: var(--text-bright); }
+.mm-canvas {
+  flex: 1; position: relative; overflow: hidden; cursor: grab; min-height: 400px;
+}
+.mm-canvas:active { cursor: grabbing; }
+.mm-canvas svg {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  overflow: visible; z-index: 1;
+}
+.mm-connector {
+  stroke-dasharray: 600; stroke-dashoffset: 600;
+  animation: mmDrawLine 0.8s ease-out forwards;
+  fill: none;
+}
+.mm-connector.primary { stroke-width: 2px; }
+.mm-connector.secondary { stroke-width: 1px; opacity: 0.6; }
+.mm-connector.cross { stroke-width: 1px; stroke-dasharray: 4,3; }
+
+.mm-node {
+  position: absolute; z-index: 10;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: 3px;
+  opacity: 0; animation: mmFadeIn 0.4s ease-out forwards;
+  cursor: pointer; transition: transform 0.2s, filter 0.2s;
+  transform: translate(-50%,-50%);
+}
+.mm-node:hover { transform: translate(-50%,-50%) scale(1.12); z-index: 20; }
+
+.mm-node-center {
+  width: 90px; height: 90px; border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--surface4), var(--surface));
+  border: 2px solid var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  text-align: center; padding: 6px;
+  font-size: 9px; font-weight: 700; color: var(--text-bright);
+  line-height: 1.2; word-break: break-word;
+  box-shadow: 0 0 20px var(--accent-glow), inset 0 0 10px rgba(91,156,247,0.1);
+  animation: mmPulseGlow 3s ease-in-out infinite;
+  cursor: default;
+}
+
+.mm-node-circle {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--surface3); border: 1.5px solid;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px; font-weight: 600; color: var(--text-bright);
+  line-height: 1.15; padding: 4px; text-align: center; word-break: break-word;
+  box-shadow: 0 0 8px rgba(0,0,0,0.3);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.mm-node:hover .mm-node-circle { box-shadow: 0 0 14px var(--accent-glow); }
+
+.mm-node-label {
+  font-size: 8.5px; color: var(--muted-light); max-width: 80px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-weight: 500;
+}
+.mm-node:hover .mm-node-label { color: var(--text-bright); white-space: normal; max-width: 120px; }
+
+.mm-node-tertiary .mm-node-circle { width: 36px; height: 36px; font-size: 7px; border-width: 1px; }
+.mm-node-tertiary .mm-node-label { font-size: 7.5px; max-width: 60px; }
+
+.mm-legend {
+  padding: 8px 12px; border-top: 1px solid var(--border); background: var(--surface2);
+  display: flex; gap: 10px; flex-wrap: wrap; flex-shrink: 0;
+}
+.mm-legend-item { display: flex; align-items: center; gap: 4px; font-size: 9px; color: var(--muted-light); }
+.mm-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+.mm-tooltip {
+  position: absolute; z-index: 100;
+  background: var(--surface4); border: 1px solid var(--border-light);
+  border-radius: 8px; padding: 10px 12px; max-width: 240px;
+  font-size: 10.5px; color: var(--text); line-height: 1.45;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  pointer-events: none; opacity: 0; transition: opacity 0.15s;
+}
+.mm-tooltip.visible { opacity: 1; pointer-events: auto; }
+.mm-tooltip-title { font-weight: 600; color: var(--text-bright); margin-bottom: 4px; font-size: 11px; }
+.mm-tooltip-meta { display: flex; gap: 4px; flex-wrap: wrap; }
+
+/* Layout: relations list + mindmap side panel */
+.rel-with-mindmap { display: flex; height: calc(100vh - 220px); overflow: hidden; }
+.rel-list-panel { flex: 1; overflow-y: auto; padding: 24px 28px; min-width: 0; }
+
 /* MISC */
 .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 10px; color: var(--muted); text-align: center; }
 .empty-icon { width: 70px; height: 70px; border-radius: 16px; background: var(--surface3); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 28px; }
@@ -441,6 +543,8 @@ function renderLawPanel(data){
 
 function switchTab(t){
   currentTab=t;
+  const tc=document.getElementById('tabContent');
+  if(tc){tc.style.padding='';tc.style.overflow='';}
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active');
   if(t==='texto') renderTexto(currentLaw.body);
@@ -480,12 +584,15 @@ function buildToc(md){
 }
 
 /* ========= RELATIONS ========= */
+let currentRelData = null;
 function loadRelations(){
   const el=document.getElementById('tabContent');
   el.innerHTML='<div class="loading"><div class="spinner"></div> Analizando relaciones normativas...</div>';
   fetch('/api/law/'+currentLaw.id+'/relations').then(r=>r.json()).then(data=>{
+    currentRelData = data;
     renderRelations(data);
     enrichEuRefs(data);
+    setTimeout(()=> renderMindmap(data), 100);
   });
 }
 
@@ -514,15 +621,18 @@ function renderRelations(data){
 
   const totalBoe = boeNodes.length, totalEu = euNodes.length, totalIntl = intlNodes.length;
 
-  el.innerHTML=`
+  const allRelNodes = [...boeNodes,...euNodes,...intlNodes,...reverseNodes,...otherExt].length;
+  el.style.padding='0'; el.style.overflow='hidden';
+  el.innerHTML=`<div class="rel-with-mindmap">
+    <div class="rel-list-panel">
     <div style="margin-bottom:14px">
       <div style="font-size:13px;font-weight:600;color:var(--text-bright);margin-bottom:6px">Mapa de relaciones normativas</div>
       <div style="font-size:11px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap">
-        <span><strong style="color:var(--text-bright)">${totalRefs}</strong> referencias detectadas</span>
-        <span><strong style="color:var(--accent)">${totalBoe}</strong> en base de datos BOE</span>
-        <span><strong style="color:#6699ff">${totalEu}</strong> Derecho UE</span>
-        <span><strong style="color:var(--yellow)">${totalIntl}</strong> internacionales</span>
-        <span><strong style="color:var(--green)">${reverseNodes.length}</strong> citan esta ley</span>
+        <span><strong style="color:var(--text-bright)">${totalRefs}</strong> referencias</span>
+        <span><strong style="color:var(--accent)">${totalBoe}</strong> BOE</span>
+        <span><strong style="color:#6699ff">${totalEu}</strong> UE</span>
+        <span><strong style="color:var(--yellow)">${totalIntl}</strong> intl</span>
+        <span><strong style="color:var(--green)">${reverseNodes.length}</strong> inversas</span>
       </div>
     </div>
 
@@ -597,7 +707,20 @@ function renderRelations(data){
           ${n.url?`<div class="rel-card-links"><a href="${n.url}" target="_blank" class="link-boe">&#128279; Ver</a></div>`:''}
         </div>`).join('')}
     </div>`:''}
-  `;
+    </div><!-- /rel-list-panel -->
+    <div class="mm-panel">
+      <div class="mm-header">&#128340; Mindmap normativo <span class="count">${allRelNodes} nodos</span></div>
+      <div class="mm-canvas" id="mmCanvas"></div>
+      <div class="mm-legend">
+        <div class="mm-legend-item"><div class="mm-legend-dot" style="background:var(--accent)"></div>BOE</div>
+        <div class="mm-legend-item"><div class="mm-legend-dot" style="background:#6699ff"></div>UE</div>
+        <div class="mm-legend-item"><div class="mm-legend-dot" style="background:var(--yellow)"></div>Intl</div>
+        <div class="mm-legend-item"><div class="mm-legend-dot" style="background:var(--green)"></div>Inversas</div>
+        <div class="mm-legend-item"><div class="mm-legend-dot" style="background:var(--accent2)"></div>Nivel 2</div>
+      </div>
+      <div class="mm-tooltip" id="mmTooltip"></div>
+    </div>
+  </div><!-- /rel-with-mindmap -->`;
 }
 
 /* ========= EUR-LEX SPARQL ENRICHMENT ========= */
@@ -690,6 +813,173 @@ function renderDiff(raw,date){
       if(d.t==='r') return `<div class="diff-line removed"><span class="diff-sign minus">&minus;</span><span class="diff-text">${esc(d.x)}</span></div>`;
       return `<div class="diff-line"><span class="diff-sign"></span><span class="diff-text">${esc(d.x)}</span></div>`;
     }).join('')}</div></div>`;
+}
+
+/* ========= MINDMAP ENGINE ========= */
+function renderMindmap(data){
+  const canvas = document.getElementById('mmCanvas');
+  if(!canvas) return;
+  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+  if(W < 50 || H < 50) return;
+
+  const {nodes, edges} = data;
+  const center = nodes.find(n=>n.isCenter);
+  if(!center) return;
+
+  // Categorize nodes for coloring
+  const colorMap = n => {
+    if(n.isCenter) return 'var(--accent)';
+    if(n.isReverse) return 'var(--green)';
+    if(n.refType==='eu') return '#6699ff';
+    if(n.refType==='intl') return 'var(--yellow)';
+    if(n.level===2) return 'var(--accent2)';
+    return 'var(--accent)';
+  };
+
+  const hslFromStr = s => { let h=0; for(let i=0;i<s.length;i++) h=s.charCodeAt(i)+((h<<5)-h); return `hsl(${h%360},75%,60%)`; };
+
+  // Separate level 1 and level 2 nodes
+  const l1 = nodes.filter(n=>!n.isCenter && n.level===1);
+  const l2 = nodes.filter(n=>n.level===2);
+
+  const cx = W/2, cy = H/2;
+
+  // Elliptical layout for level 1 (like Infinite_mindmap)
+  const rxL1 = Math.max(120, W*0.38);
+  const ryL1 = Math.max(90, H*0.36);
+  const arcRange = (16/9)*Math.PI; // 320 degrees
+
+  const posMap = {};
+  posMap[center.id] = {x:cx, y:cy};
+
+  l1.forEach((n,i)=>{
+    const total = l1.length;
+    let angle;
+    if(total<=1){ angle=-Math.PI/2; }
+    else {
+      const start = -Math.PI/2 - arcRange/2;
+      const step = arcRange/(total-1);
+      angle = start + i*step;
+    }
+    posMap[n.id] = { x: cx + rxL1*Math.cos(angle), y: cy + ryL1*Math.sin(angle) };
+  });
+
+  // Level 2 nodes radiate from their parent
+  l2.forEach((n,i)=>{
+    const parentEdge = edges.find(e=>e.to===n.id);
+    const parentId = parentEdge ? parentEdge.from : center.id;
+    const pp = posMap[parentId] || {x:cx,y:cy};
+    const pAngle = Math.atan2(pp.y-cy, pp.x-cx);
+    const tRadius = 70;
+    const siblings = l2.filter(nn=>edges.find(e=>e.to===nn.id)?.from===parentId);
+    const si = siblings.indexOf(n);
+    const sTotal = siblings.length;
+    const spread = Math.PI*0.5;
+    const a = pAngle - spread/2 + (sTotal>1 ? (si/(sTotal-1))*spread : 0);
+    posMap[n.id] = { x: pp.x + tRadius*Math.cos(a), y: pp.y + tRadius*Math.sin(a) };
+  });
+
+  // Build SVG lines
+  let svgLines = '';
+  edges.forEach((e,i)=>{
+    const from = posMap[e.from], to = posMap[e.to];
+    if(!from||!to) return;
+    const isL2 = nodes.find(n=>n.id===e.to)?.level===2;
+    const isCross = e.type==='referenced_by';
+    const fromNode = nodes.find(n=>n.id===e.from);
+    const toNode = nodes.find(n=>n.id===e.to);
+    const col = isCross ? 'var(--green)' : colorMap(toNode||{});
+
+    if(isCross){
+      // Bezier curve
+      const mx=(from.x+to.x)/2, my=(from.y+to.y)/2;
+      const vx=mx-cx, vy=my-cy;
+      const len=Math.sqrt(vx*vx+vy*vy)||1;
+      const cf=40;
+      const ccx=mx+(vx/len)*cf, ccy=my+(vy/len)*cf;
+      svgLines+=`<path d="M ${from.x} ${from.y} Q ${ccx} ${ccy} ${to.x} ${to.y}" class="mm-connector cross" stroke="${col}" style="animation-delay:${i*30}ms" marker-end="url(#mmArrow)"/>`;
+    } else {
+      svgLines+=`<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" class="mm-connector ${isL2?'secondary':'primary'}" stroke="${col}" style="animation-delay:${i*30}ms"/>`;
+    }
+  });
+
+  // Build node elements
+  let nodesHtml = '';
+
+  // Center node
+  const cLabel = center.label.length > 40 ? center.label.split(',')[0] : center.label;
+  nodesHtml += `<div class="mm-node" style="left:${cx}px;top:${cy}px;animation-delay:0.1s;cursor:default" data-id="${esc(center.id)}" data-full="${esc(center.label)}"><div class="mm-node-center">${esc(cLabel.length>30?cLabel.slice(0,27)+'...':cLabel)}</div></div>`;
+
+  // L1 + L2 nodes
+  [...l1,...l2].forEach((n,i)=>{
+    const p = posMap[n.id];
+    if(!p) return;
+    const col = colorMap(n);
+    const isL2 = n.level===2;
+    const cls = isL2 ? 'mm-node-tertiary' : '';
+    const shortLabel = n.label.length > 25 ? n.label.split(',')[0].slice(0,22)+'...' : n.label.split(',')[0];
+    const clickable = n.inDatabase ? `onclick="navigateLaw('${n.id}')"` : (n.url ? `onclick="window.open('${n.url}','_blank')"` : '');
+
+    nodesHtml += `<div class="mm-node ${cls}" style="left:${p.x}px;top:${p.y}px;animation-delay:${0.15+i*0.05}s" ${clickable}
+      data-id="${esc(n.id)}" data-full="${esc(n.label)}" data-rango="${esc(n.rango||'')}" data-estado="${esc(n.estado||'')}" data-fecha="${esc(n.fecha||'')}" data-type="${n.refType||'boe'}" data-in-db="${n.inDatabase?'1':'0'}"
+      onmouseenter="showMmTooltip(event,this)" onmouseleave="hideMmTooltip()">
+      <div class="mm-node-circle" style="border-color:${col}">${esc(shortLabel)}</div>
+    </div>`;
+  });
+
+  canvas.innerHTML = `
+    <svg style="position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;z-index:1">
+      <defs>
+        <marker id="mmArrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="var(--green)"/>
+        </marker>
+      </defs>
+      ${svgLines}
+    </svg>
+    ${nodesHtml}
+  `;
+}
+
+function showMmTooltip(ev, el){
+  const tip = document.getElementById('mmTooltip');
+  if(!tip) return;
+  const full = el.dataset.full || '';
+  const rango = el.dataset.rango || '';
+  const estado = el.dataset.estado || '';
+  const fecha = el.dataset.fecha || '';
+  const type = el.dataset.type || 'boe';
+  const inDb = el.dataset.inDb === '1';
+
+  let typeLabel = {boe:'BOE',eu:'UE (EUR-Lex)',intl:'Internacional',ley:'BOE',rd:'BOE',orden:'BOE'}[type]||'Referencia';
+
+  tip.innerHTML = `
+    <div class="mm-tooltip-title">${esc(full)}</div>
+    <div class="mm-tooltip-meta">
+      ${rango?`<span class="badge badge-rango">${fmtR(rango)}</span>`:''}
+      ${estado?`<span class="badge badge-${estado}">${estado}</span>`:''}
+      ${fecha?`<span class="badge badge-date">${fecha}</span>`:''}
+      <span class="badge" style="background:var(--surface4);color:var(--muted-light)">${typeLabel}</span>
+      ${inDb?'<span class="badge badge-vigente" style="font-size:8px">Click para abrir</span>':''}
+    </div>
+  `;
+
+  const rect = el.getBoundingClientRect();
+  const panel = el.closest('.mm-panel');
+  const pRect = panel.getBoundingClientRect();
+  let left = rect.left - pRect.left + rect.width/2 - 120;
+  let top = rect.top - pRect.top - tip.offsetHeight - 8;
+  if(top < 5) top = rect.bottom - pRect.top + 8;
+  if(left < 5) left = 5;
+  if(left + 240 > pRect.width) left = pRect.width - 245;
+
+  tip.style.left = left+'px';
+  tip.style.top = top+'px';
+  tip.classList.add('visible');
+}
+
+function hideMmTooltip(){
+  const tip = document.getElementById('mmTooltip');
+  if(tip) tip.classList.remove('visible');
 }
 
 /* ========= UTILS ========= */
