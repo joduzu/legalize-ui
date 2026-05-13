@@ -1,17 +1,25 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const { execSync, execFileSync, execFile } = require('child_process');
+const { execFile } = require('child_process');
 const https = require('https');
-const http = require('http');
 
 const app = express();
-const PORT = 3737;
-const LAWS_DIR = path.join('C:/Users/joduz/AppData/Roaming/Claude/legalize-es/spain');
-const REPO_DIR = path.join('C:/Users/joduz/AppData/Roaming/Claude/legalize-es');
+const PORT = process.env.PORT || 3737;
+const LAWS_DIR = process.env.LAWS_DIR || 'C:/Users/joduz/AppData/Roaming/Claude/legalize-es/spain';
+const REPO_DIR = process.env.REPO_DIR || 'C:/Users/joduz/AppData/Roaming/Claude/legalize-es';
 
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  next();
+});
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+function isValidLawId(id) {
+  return typeof id === 'string' && /^[A-Za-z0-9_-]+$/.test(id) && id.length <= 100;
+}
 
 // ===== CACHES =====
 const eurlexCache = {};
@@ -352,32 +360,32 @@ app.get('/api/search', (req, res) => {
   const { q = '', rango = '', estado = '', desde = '', hasta = '' } = req.query;
   if (!q && !rango && !estado) return res.json({ results: [], total: 0 });
   try {
-    const files = fs.readdirSync(LAWS_DIR).filter(f => f.endsWith('.md'));
+    const index = buildIndex();
+    const qLow = q.toLowerCase();
     const results = [];
-    for (const file of files) {
-      const content = fs.readFileSync(path.join(LAWS_DIR, file), 'utf8');
-      const meta = parseFrontmatter(content);
-      if (rango && meta.rango !== rango) continue;
-      if (estado && meta.estado !== estado) continue;
-      if (desde && meta.fecha_publicacion < desde) continue;
-      if (hasta && meta.fecha_publicacion > hasta) continue;
-      if (q && !content.toLowerCase().includes(q.toLowerCase())) continue;
+
+    const candidates = Object.values(index).filter(law => {
+      if (rango && law.rango !== rango) return false;
+      if (estado && law.estado !== estado) return false;
+      if (desde && law.fecha_publicacion < desde) return false;
+      if (hasta && law.fecha_publicacion > hasta) return false;
+      return true;
+    });
+
+    for (const law of candidates) {
+      if (results.length >= 100) break;
       let snippet = '';
       if (q) {
-        const idx = content.toLowerCase().indexOf(q.toLowerCase());
-        if (idx !== -1) {
-          const s = Math.max(0, idx - 100), e = Math.min(content.length, idx + 200);
-          snippet = '...' + content.slice(s, e).replace(/\n/g, ' ') + '...';
-        }
+        const content = fs.readFileSync(path.join(LAWS_DIR, law.id + '.md'), 'utf8');
+        const contentLow = content.toLowerCase();
+        if (!contentLow.includes(qLow)) continue;
+        const idx = contentLow.indexOf(qLow);
+        const s = Math.max(0, idx - 100), e = Math.min(content.length, idx + 200);
+        snippet = '...' + content.slice(s, e).replace(/\n/g, ' ') + '...';
       }
-      results.push({
-        id: file.replace('.md', ''), titulo: meta.titulo || file,
-        rango: meta.rango || '', fecha_publicacion: meta.fecha_publicacion || '',
-        ultima_actualizacion: meta.ultima_actualizacion || '',
-        estado: meta.estado || '', fuente: meta.fuente || '', snippet
-      });
-      if (results.length >= 100) break;
+      results.push({ ...law, snippet });
     }
+
     results.sort((a, b) => b.fecha_publicacion.localeCompare(a.fecha_publicacion));
     res.json({ results, total: results.length });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -385,6 +393,7 @@ app.get('/api/search', (req, res) => {
 
 // ===== LAW =====
 app.get('/api/law/:id', (req, res) => {
+  if (!isValidLawId(req.params.id)) return res.status(400).json({ error: 'Invalid ID' });
   const fp = path.join(LAWS_DIR, req.params.id + '.md');
   if (!fs.existsSync(fp)) return res.status(404).json({ error: 'Not found' });
   const content = fs.readFileSync(fp, 'utf8');
@@ -395,6 +404,7 @@ app.get('/api/law/:id', (req, res) => {
 
 // ===== RELATIONS =====
 app.get('/api/law/:id/relations', (req, res) => {
+  if (!isValidLawId(req.params.id)) return res.status(400).json({ error: 'Invalid ID' });
   try {
     const fp = path.join(LAWS_DIR, req.params.id + '.md');
     if (!fs.existsSync(fp)) return res.status(404).json({ error: 'Not found' });
@@ -508,6 +518,7 @@ app.get('/api/law/:id/relations', (req, res) => {
 
 // ===== HISTORY (async + cached) =====
 app.get('/api/law/:id/history', async (req, res) => {
+  if (!isValidLawId(req.params.id)) return res.status(400).json({ error: 'Invalid ID' });
   const id = req.params.id;
   try {
     if (historyCache[id]) return res.json({ commits: historyCache[id] });
@@ -525,6 +536,7 @@ app.get('/api/law/:id/history', async (req, res) => {
 // ===== DIFF (async + cached) =====
 app.get('/api/law/:id/diff/:hash', async (req, res) => {
   const { id, hash } = req.params;
+  if (!isValidLawId(id)) return res.status(400).json({ error: 'Invalid ID' });
   if (!/^[0-9a-f]+$/i.test(hash)) return res.status(400).json({ error: 'Invalid hash' });
   const cacheKey = hash + ':' + id;
   try {
@@ -540,18 +552,20 @@ app.get('/api/law/:id/diff/:hash', async (req, res) => {
 });
 
 // ===== STATS =====
+let statsCache = null;
 app.get('/api/stats', (req, res) => {
   try {
-    const files = fs.readdirSync(LAWS_DIR).filter(f => f.endsWith('.md'));
+    if (statsCache) return res.json(statsCache);
+    const index = buildIndex();
     const rangos = {}, estados = {};
     let vigentes = 0;
-    for (const file of files) {
-      const meta = parseFrontmatter(fs.readFileSync(path.join(LAWS_DIR, file), 'utf8'));
-      rangos[meta.rango] = (rangos[meta.rango] || 0) + 1;
-      estados[meta.estado] = (estados[meta.estado] || 0) + 1;
-      if (meta.estado === 'vigente') vigentes++;
+    for (const law of Object.values(index)) {
+      rangos[law.rango] = (rangos[law.rango] || 0) + 1;
+      estados[law.estado] = (estados[law.estado] || 0) + 1;
+      if (law.estado === 'vigente') vigentes++;
     }
-    res.json({ total: files.length, vigentes, rangos, estados });
+    statsCache = { total: Object.keys(index).length, vigentes, rangos, estados };
+    res.json(statsCache);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
