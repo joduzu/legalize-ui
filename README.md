@@ -95,14 +95,19 @@ cd legalize-ui
 # 3. Instalar dependencias
 npm install
 
-# 4. Configurar la ruta al repositorio de leyes
-#    Editar LAWS_DIR y REPO_DIR en server.js
+# 4. Iniciar el servidor apuntando al repositorio de leyes
+LAWS_DIR=/ruta/a/legalize-es/spain REPO_DIR=/ruta/a/legalize-es node server.js
 
-# 5. Iniciar el servidor
-node server.js
+# O en Windows (PowerShell)
+$env:LAWS_DIR="C:\ruta\legalize-es\spain"; $env:REPO_DIR="C:\ruta\legalize-es"; node server.js
 ```
 
 La aplicacion estara disponible en **http://localhost:3737**
+
+> Variables de entorno disponibles:
+> - `LAWS_DIR` — directorio con los archivos `.md` de las leyes
+> - `REPO_DIR` — raiz del repositorio git (para historial y diffs)
+> - `PORT` — puerto del servidor (por defecto `3737`)
 
 ---
 
