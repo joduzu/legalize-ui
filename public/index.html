@@ -983,9 +983,9 @@ function hideMmTooltip(){
 }
 
 /* ========= UTILS ========= */
-function hl(t,q){if(!q)return t;return t.replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark>$1</mark>');}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function hl(t,q){const e=esc(t);if(!q)return e;return e.replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark>$1</mark>');}
 function fmtR(r){return{constitucion:'Constitucion',ley_organica:'Ley Organica',ley:'Ley',real_decreto_legislativo:'RD Legislativo',real_decreto_ley:'RD-Ley',real_decreto:'Real Decreto',orden:'Orden',resolucion:'Resolucion',circular:'Circular',decreto:'Decreto',instruccion:'Instruccion',acuerdo_internacional:'Acuerdo Intl'}[r]||r;}
-function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 </script>
 </body>
 </html>
