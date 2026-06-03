@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Legalize ES — Consulta Legislativa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Literata:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080a0f; --surface: #0e1118; --surface2: #161a26;
+  --surface3: #1c2133; --surface4: #242a3e;
+  --border: #262d45; --border-light: #333d5a;
+  --accent: #5b9cf7; --accent-dim: rgba(91,156,247,0.12); --accent-glow: rgba(91,156,247,0.25);
+  --accent2: #a17af7; --accent2-dim: rgba(161,122,247,0.10);
+  --green: #41d89e; --green-dim: rgba(65,216,158,0.10);
+  --red: #f76c6c; --red-dim: rgba(247,108,108,0.10);
+  --yellow: #f0c351; --yellow-dim: rgba(240,195,81,0.10);
+  --orange: #e89b5e; --cyan: #56d4e8; --cyan-dim: rgba(86,212,232,0.10);
+  --eu-blue: #003399; --eu-gold: #ffcc00;
+  --eu-bg: rgba(0,51,153,0.12); --eu-border: rgba(0,51,153,0.35);
+  --text: #c8cde8; --text-bright: #e8ecf8;
+  --muted: #6b7394; --muted-light: #8892b3;
+  --serif: 'Literata', Georgia, serif;
+  --sans: 'Inter', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --radius: 10px; --shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; min-height: 100vh; overflow: hidden; }
+.app { display: flex; flex-direction: column; height: 100vh; }
+
+/* HEADER */
+header {
+  background: linear-gradient(180deg, rgba(14,17,24,0.97), rgba(22,26,38,0.97));
+  backdrop-filter: blur(12px); border-bottom: 1px solid var(--border);
+  padding: 0 24px; height: 50px;
+  display: flex; align-items: center; gap: 14px; flex-shrink: 0; z-index: 100;
+}
+.logo { display: flex; align-items: center; gap: 8px; }
+.logo-icon {
+  width: 28px; height: 28px; border-radius: 7px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; box-shadow: 0 2px 10px var(--accent-glow);
+}
+.logo-text { font-size: 15px; font-weight: 700; color: var(--text-bright); }
+.logo-text span { font-weight: 400; color: var(--muted-light); font-size: 13px; }
+.hsep { width: 1px; height: 20px; background: var(--border); }
+.hdesc { font-size: 10.5px; color: var(--muted); }
+.stats-bar { display: flex; gap: 6px; margin-left: auto; }
+.stat-chip {
+  background: var(--surface3); border: 1px solid var(--border);
+  border-radius: 16px; padding: 2px 10px;
+  display: flex; align-items: center; gap: 4px;
+  color: var(--muted-light); font-weight: 500; font-size: 10px;
+}
+.stat-chip strong { color: var(--text-bright); font-weight: 600; }
+.stat-dot { width: 5px; height: 5px; border-radius: 50%; }
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* SIDEBAR */
+.sidebar {
+  width: 320px; min-width: 320px; background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.search-box { padding: 12px 12px 10px; border-bottom: 1px solid var(--border); }
+.search-input-wrap { position: relative; margin-bottom: 8px; }
+.search-input-wrap svg {
+  position: absolute; left: 11px; top: 50%;
+  transform: translateY(-50%); color: var(--muted); pointer-events: none;
+}
+input[type="text"], select {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); padding: 8px 11px; border-radius: 7px;
+  font-size: 12.5px; font-family: var(--sans); outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+#searchInput { padding-left: 34px; }
+.filters { display: flex; flex-direction: column; gap: 6px; }
+.filter-row { display: flex; gap: 6px; }
+.filter-row > div { flex: 1; }
+label { font-size: 9.5px; color: var(--muted); margin-bottom: 2px; display: block; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: white; border: none; padding: 9px 14px; border-radius: 7px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  width: 100%; transition: opacity 0.2s, transform 0.1s; font-family: var(--sans);
+}
+.btn:hover { opacity: 0.9; } .btn:active { transform: scale(0.98); }
+.btn-sm { padding: 4px 10px; font-size: 10.5px; width: auto; border-radius: 5px; }
+.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--muted-light); }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); opacity: 1; }
+.btn-green { background: var(--green-dim); border: 1px solid rgba(65,216,158,0.3); color: var(--green); }
+.btn-eu { background: var(--eu-bg); border: 1px solid var(--eu-border); color: #6699ff; }
+.btn-eu:hover { background: rgba(0,51,153,0.2); color: #88bbff; opacity: 1; }
+.results-header {
+  padding: 6px 12px; font-size: 10.5px; color: var(--muted);
+  border-bottom: 1px solid var(--border); display: flex; justify-content: space-between;
+  background: var(--surface2);
+}
+.results-list { overflow-y: auto; flex: 1; }
+.result-item {
+  padding: 10px 12px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background 0.15s;
+  border-left: 3px solid transparent;
+}
+.result-item:hover { background: var(--surface2); }
+.result-item.active { background: var(--surface2); border-left-color: var(--accent); }
+.result-titulo { font-size: 12px; font-weight: 500; line-height: 1.4; margin-bottom: 5px; color: var(--text-bright); }
+.result-meta { display: flex; gap: 4px; flex-wrap: wrap; }
+.badge {
+  font-size: 9.5px; padding: 1px 6px; border-radius: 3px;
+  font-weight: 600; letter-spacing: 0.2px; display: inline-flex; align-items: center; gap: 2px;
+}
+.badge-rango { background: var(--accent-dim); color: var(--accent); }
+.badge-vigente { background: var(--green-dim); color: var(--green); }
+.badge-derogado { background: var(--red-dim); color: var(--red); }
+.badge-date { background: transparent; color: var(--muted); font-weight: 400; }
+.badge-id { background: var(--accent2-dim); color: var(--accent2); font-family: var(--mono); font-size: 8.5px; }
+.badge-eu { background: var(--eu-bg); color: #6699ff; border: 1px solid var(--eu-border); }
+.badge-intl { background: var(--yellow-dim); color: var(--yellow); }
+.snippet {
+  font-size: 11px; color: var(--muted-light); margin-top: 5px; line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  font-family: var(--serif); font-style: italic;
+}
+mark { background: rgba(91,156,247,0.25); color: var(--accent); border-radius: 2px; padding: 0 1px; }
+
+/* CONTENT */
+.content { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+.content-header {
+  padding: 14px 24px 12px; border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--surface), var(--surface2)); flex-shrink: 0;
+}
+.content-title { font-size: 15px; font-weight: 600; margin-bottom: 8px; line-height: 1.35; color: var(--text-bright); }
+.content-meta { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.fuente-link { font-size: 10px; color: var(--muted-light); display: inline-flex; align-items: center; gap: 3px; text-decoration: none; }
+.fuente-link:hover { color: var(--accent); }
+
+/* BREADCRUMBS */
+.breadcrumbs {
+  padding: 6px 24px; background: var(--surface3); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 6px; font-size: 11px; flex-shrink: 0;
+  overflow-x: auto; white-space: nowrap;
+}
+.bc-item { color: var(--muted-light); cursor: pointer; transition: color 0.15s; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+.bc-item:hover { color: var(--accent); }
+.bc-item.active { color: var(--text-bright); font-weight: 600; cursor: default; }
+.bc-sep { color: var(--muted); font-size: 9px; }
+
+/* TABS */
+.tabs {
+  display: flex; gap: 0; padding: 0 24px; background: var(--surface2);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.tab {
+  padding: 9px 16px; font-size: 11.5px; font-weight: 500;
+  color: var(--muted); cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all 0.2s;
+  display: flex; align-items: center; gap: 5px;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-content { flex: 1; overflow-y: auto; padding: 24px 28px; }
+
+/* LAW TEXT */
+.law-body { max-width: 760px; line-height: 1.8; font-family: var(--serif); font-size: 14px; color: var(--text); }
+.law-body h1 { font-family: var(--sans); font-size: 18px; font-weight: 700; margin: 0 0 18px; color: var(--text-bright); padding-bottom: 10px; border-bottom: 2px solid var(--accent); }
+.law-body h2 { font-family: var(--sans); font-size: 13px; font-weight: 600; margin: 28px 0 10px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.7px; display: flex; align-items: center; gap: 7px; }
+.law-body h2::before { content: ''; width: 3px; height: 14px; background: var(--accent); border-radius: 2px; flex-shrink: 0; }
+.law-body h3 { font-family: var(--sans); font-size: 12.5px; font-weight: 500; margin: 18px 0 7px; color: var(--muted-light); }
+.law-body .art-heading { font-family: var(--sans); font-weight: 600; font-size: 13px; color: var(--text-bright); background: var(--surface3); border-left: 3px solid var(--accent2); padding: 7px 12px; margin: 22px 0 10px; border-radius: 0 6px 6px 0; }
+.law-body .art-heading .art-num { color: var(--accent2); }
+.law-body p { margin-bottom: 8px; text-align: justify; }
+.law-body strong { color: var(--text-bright); }
+
+/* TOC */
+.toc { background: var(--surface3); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; max-height: 240px; overflow-y: auto; }
+.toc-title { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.toc-item { font-size: 11px; padding: 2px 0; display: block; color: var(--muted-light); cursor: pointer; font-family: var(--sans); }
+.toc-item:hover { color: var(--accent); }
+.toc-item.toc-l2 { padding-left: 12px; font-size: 10.5px; color: var(--muted); }
+
+/* RELATIONS PANEL */
+.rel-layout { display: flex; gap: 0; height: 100%; }
+.rel-list { flex: 1; overflow-y: auto; padding: 0; }
+.rel-graph-panel {
+  width: 380px; min-width: 380px; border-left: 1px solid var(--border);
+  background: var(--surface); display: flex; flex-direction: column; overflow: hidden;
+}
+.rel-graph-header {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  font-size: 11px; color: var(--muted); font-weight: 600;
+  display: flex; align-items: center; gap: 6px;
+}
+.rel-graph-canvas { flex: 1; position: relative; overflow: hidden; }
+.rel-graph-canvas canvas { width: 100%; height: 100%; }
+
+.rel-section {
+  padding: 14px 20px; border-bottom: 1px solid var(--border);
+}
+.rel-section-title {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.8px; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.rel-section-title.boe { color: var(--accent); }
+.rel-section-title.eu { color: #6699ff; }
+.rel-section-title.intl { color: var(--yellow); }
+.rel-section-title.reverse { color: var(--green); }
+.rel-section-title .count { font-family: var(--mono); font-size: 9px; background: var(--surface4); padding: 1px 5px; border-radius: 3px; }
+
+.rel-card {
+  background: var(--surface3); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 12px; margin-bottom: 6px;
+  cursor: pointer; transition: all 0.2s; position: relative;
+}
+.rel-card:hover { border-color: var(--accent); background: var(--surface4); }
+.rel-card.eu-card { border-left: 3px solid #335599; }
+.rel-card.eu-card:hover { border-color: #6699ff; }
+.rel-card.intl-card { border-left: 3px solid var(--yellow); }
+.rel-card.boe-card { border-left: 3px solid var(--accent); }
+.rel-card.reverse-card { border-left: 3px solid var(--green); }
+
+.rel-card-title { font-size: 12px; font-weight: 500; color: var(--text-bright); line-height: 1.4; margin-bottom: 4px; }
+.rel-card-meta { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.rel-card-links { display: flex; gap: 4px; margin-top: 6px; }
+.rel-card-links a {
+  font-size: 9.5px; padding: 2px 7px; border-radius: 4px;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 3px;
+  transition: all 0.15s;
+}
+.link-eurlex { background: var(--eu-bg); color: #6699ff; border: 1px solid var(--eu-border); }
+.link-eurlex:hover { background: rgba(0,51,153,0.25); color: #99ccff; }
+.link-boe { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(91,156,247,0.2); }
+.link-boe:hover { background: rgba(91,156,247,0.2); }
+.link-pdf { background: var(--red-dim); color: var(--red); border: 1px solid rgba(247,108,108,0.2); }
+.link-html { background: var(--green-dim); color: var(--green); border: 1px solid rgba(65,216,158,0.2); }
+
+/* EU enrichment inline */
+.eu-title-resolved { font-size: 11px; color: var(--muted-light); margin-top: 3px; font-style: italic; }
+.eu-status { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; }
+.eu-status.in-force { color: var(--green); }
+.eu-status.not-force { color: var(--red); }
+
+/* TIMELINE */
+.timeline { max-width: 700px; }
+.commit-item { display: flex; gap: 14px; margin-bottom: 14px; position: relative; }
+.commit-item::before { content: ''; position: absolute; left: 12px; top: 28px; bottom: -14px; width: 1px; background: var(--border); }
+.commit-item:last-child::before { display: none; }
+.commit-dot { width: 26px; height: 26px; border-radius: 50%; background: var(--surface3); border: 2px solid var(--accent); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--accent); z-index: 1; font-weight: 600; }
+.commit-dot.bootstrap { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+.commit-body { flex: 1; }
+.commit-header { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; flex-wrap: wrap; }
+.commit-date { font-size: 11px; color: var(--text-bright); font-weight: 600; font-family: var(--mono); }
+.commit-detail { background: var(--surface3); border: 1px solid var(--border); border-radius: 7px; padding: 10px 14px; font-size: 12px; color: var(--muted-light); line-height: 1.5; }
+.commit-detail strong { color: var(--text-bright); }
+.commit-arts { font-size: 10px; color: var(--accent); margin-top: 5px; display: flex; flex-wrap: wrap; gap: 3px; }
+.art-tag { background: var(--accent-dim); padding: 1px 5px; border-radius: 3px; font-family: var(--mono); font-size: 9px; }
+
+/* DIFF */
+.diff-viewer { font-family: var(--mono); font-size: 11.5px; line-height: 1.65; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.diff-header { background: var(--surface3); padding: 8px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; font-family: var(--sans); font-size: 11px; }
+.diff-stats { display: flex; gap: 8px; margin-left: auto; font-size: 10px; }
+.diff-body { padding: 4px 0; max-height: 560px; overflow-y: auto; }
+.diff-line { display: flex; padding: 0 10px; min-height: 20px; }
+.diff-line.added { background: var(--green-dim); }
+.diff-line.removed { background: var(--red-dim); }
+.diff-line.hunk { background: var(--accent2-dim); margin: 4px 0; padding: 3px 10px; }
+.diff-sign { width: 12px; flex-shrink: 0; font-weight: 700; }
+.diff-sign.plus { color: var(--green); } .diff-sign.minus { color: var(--red); }
+.diff-text { white-space: pre-wrap; word-break: break-word; flex: 1; }
+.diff-line.added .diff-text { color: #aaf0c8; }
+.diff-line.removed .diff-text { color: #f7b0b0; }
+.diff-line.hunk .diff-text { color: var(--accent2); font-weight: 500; }
+
+/* =================== MINDMAP =================== */
+@keyframes mmFadeIn { from { opacity:0; transform:translate(-50%,-50%) scale(0.6); } to { opacity:1; transform:translate(-50%,-50%) scale(1); } }
+@keyframes mmDrawLine { to { stroke-dashoffset: 0; } }
+@keyframes mmPulseGlow { 0%,100% { filter: drop-shadow(0 0 4px var(--accent-glow)); } 50% { filter: drop-shadow(0 0 12px var(--accent-glow)); } }
+
+.mm-panel {
+  width: 420px; min-width: 420px; border-left: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+  display: flex; flex-direction: column; overflow: hidden; position: relative;
+  height: 100%;
+}
+.mm-header {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  font-size: 11px; color: var(--muted); font-weight: 600;
+  display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+  background: var(--surface2);
+}
+.mm-header .count { font-family: var(--mono); font-size: 9px; background: var(--surface4); padding: 1px 5px; border-radius: 3px; color: var(--text-bright); }
+.mm-canvas {
+  flex: 1; position: relative; overflow: hidden; cursor: grab; min-height: 400px;
+}
+.mm-canvas:active { cursor: grabbing; }
+.mm-canvas svg {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  overflow: visible; z-index: 1;
+}
+.mm-connector {
+  stroke-dasharray: 600; stroke-dashoffset: 600;
+  animation: mmDrawLine 0.8s ease-out forwards;
+  fill: none;
+}
+.mm-connector.primary { stroke-width: 2px; }
+.mm-connector.secondary { stroke-width: 1px; opacity: 0.6; }
+.mm-connector.cross { stroke-width: 1px; stroke-dasharray: 4,3; }
+
+.mm-node {
+  position: absolute; z-index: 10;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: 3px;
+  opacity: 0; animation: mmFadeIn 0.4s ease-out forwards;
+  cursor: pointer; transition: transform 0.2s, filter 0.2s;
+  transform: translate(-50%,-50%);
+}
+.mm-node:hover { transform: translate(-50%,-50%) scale(1.12); z-index: 20; }
+
+.mm-node-center {
+  width: 90px; height: 90px; border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--surface4), var(--surface));
+  border: 2px solid var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  text-align: center; padding: 6px;
+  font-size: 9px; font-weight: 700; color: var(--text-bright);
+  line-height: 1.2; word-break: break-word;
+  box-shadow: 0 0 20px var(--accent-glow), inset 0 0 10px rgba(91,156,247,0.1);
+  animation: mmPulseGlow 3s ease-in-out infinite;
+  cursor: default;
+}
+
+.mm-node-circle {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--surface3); border: 1.5px solid;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px; font-weight: 600; color: var(--text-bright);
+  line-height: 1.15; padding: 4px; text-align: center; word-break: break-word;
+  box-shadow: 0 0 8px rgba(0,0,0,0.3);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.mm-node:hover .mm-node-circle { box-shadow: 0 0 14px var(--accent-glow); }
+
+.mm-node-label {
+  font-size: 8.5px; color: var(--muted-light); max-width: 80px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-weight: 500;
+}
+.mm-node:hover .mm-node-label { color: var(--text-bright); white-space: normal; max-width: 120px; }
+
+.mm-node-tertiary .mm-node-circle { width: 36px; height: 36px; font-size: 7px; border-width: 1px; }
+.mm-node-tertiary .mm-node-label { font-size: 7.5px; max-width: 60px; }
+
+.mm-legend {
+  padding: 8px 12px; border-top: 1px solid var(--border); background: var(--surface2);
+  display: flex; gap: 10px; flex-wrap: wrap; flex-shrink: 0;
+}
+.mm-legend-item { display: flex; align-items: center; gap: 4px; font-size: 9px; color: var(--muted-light); }
+.mm-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+.mm-tooltip {
+  position: absolute; z-index: 100;
+  background: var(--surface4); border: 1px solid var(--border-light);
+  border-radius: 8px; padding: 10px 12px; max-width: 240px;
+  font-size: 10.5px; color: var(--text); line-height: 1.45;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  pointer-events: none; opacity: 0; transition: opacity 0.15s;
+}
+.mm-tooltip.visible { opacity: 1; pointer-events: auto; }
+.mm-tooltip-title { font-weight: 600; color: var(--text-bright); margin-bottom: 4px; font-size: 11px; }
+.mm-tooltip-meta { display: flex; gap: 4px; flex-wrap: wrap; }
+
+/* Layout: relations list + mindmap side panel */
+.rel-with-mindmap { display: flex; height: calc(100vh - 220px); overflow: hidden; }
+.rel-list-panel { flex: 1; overflow-y: auto; padding: 24px 28px; min-width: 0; }
+
+/* MISC */
+.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 10px; color: var(--muted); text-align: center; }
+.empty-icon { width: 70px; height: 70px; border-radius: 16px; background: var(--surface3); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 28px; }
+.empty h3 { font-size: 15px; color: var(--text-bright); }
+.empty p { font-size: 12px; max-width: 340px; line-height: 1.5; }
+.loading { display: flex; align-items: center; justify-content: center; padding: 36px; color: var(--muted); gap: 8px; font-size: 12px; }
+.spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.no-results { padding: 36px 14px; text-align: center; color: var(--muted); font-size: 12px; }
+::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+a { color: var(--accent); text-decoration: none; } a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo"><div class="logo-icon">&#9878;</div><div class="logo-text">Legalize <span>ES</span></div></div>
+    <div class="hsep"></div>
+    <div class="hdesc">Legislacion espanola + Derecho UE &middot; BOE + EUR-Lex</div>
+    <div class="stats-bar" id="statsBar"></div>
+  </header>
+  <div class="main">
+    <div class="sidebar">
+      <div class="search-box">
+        <div class="search-input-wrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="searchInput" placeholder="Buscar en leyes..." onkeydown="if(event.key==='Enter') doSearch()">
+        </div>
+        <div class="filters">
+          <div class="filter-row">
+            <div><label>Tipo</label><select id="filterRango"><option value="">Todos</option><option value="constitucion">Constitucion</option><option value="ley_organica">Ley Organica</option><option value="ley">Ley</option><option value="real_decreto_legislativo">RD Legislativo</option><option value="real_decreto_ley">RD-Ley</option><option value="real_decreto">Real Decreto</option><option value="orden">Orden</option><option value="resolucion">Resolucion</option><option value="circular">Circular</option></select></div>
+            <div><label>Estado</label><select id="filterEstado"><option value="">Todos</option><option value="vigente">Vigente</option><option value="derogado">Derogado</option></select></div>
+          </div>
+          <div class="filter-row">
+            <div><label>Desde</label><input type="text" id="filterDesde" placeholder="1978"></div>
+            <div><label>Hasta</label><input type="text" id="filterHasta" placeholder="2026"></div>
+          </div>
+          <button class="btn" onclick="doSearch()">Buscar</button>
+        </div>
+      </div>
+      <div class="results-header"><span id="resultsCount">Buscar legislacion</span><span id="resultsTime"></span></div>
+      <div class="results-list" id="resultsList">
+        <div class="empty" style="height:220px;padding:20px"><div class="empty-icon">&#9878;</div><p style="font-size:11px">Busca por texto libre o filtra por tipo, estado, fechas</p></div>
+      </div>
+    </div>
+    <div class="content" id="contentPanel">
+      <div class="empty">
+        <div class="empty-icon">&#128220;</div>
+        <h3>Consulta legislativa integrada</h3>
+        <p>Legislacion espanola + Derecho de la UE integrados. Busca una ley para ver texto, reformas, diffs y relaciones normativas.</p>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <div class="stat-chip"><div class="stat-dot" style="background:var(--accent)"></div><strong>8.642</strong> leyes BOE</div>
+          <div class="stat-chip"><div class="stat-dot" style="background:#6699ff"></div><strong>EUR-Lex</strong> integrado</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+let currentLaw=null, currentTab='texto', currentHistory=[], searchQuery='';
+let navStack=[]; // breadcrumb navigation
+
+fetch('/api/stats').then(r=>r.json()).then(d=>{
+  document.getElementById('statsBar').innerHTML=`
+    <div class="stat-chip"><div class="stat-dot" style="background:var(--accent)"></div><strong>${d.total.toLocaleString()}</strong> BOE</div>
+    <div class="stat-chip"><div class="stat-dot" style="background:var(--green)"></div><strong>${d.vigentes.toLocaleString()}</strong> vigentes</div>
+    <div class="stat-chip"><div class="stat-dot" style="background:#6699ff"></div>EUR-Lex</div>`;
+});
+
+/* ========= SEARCH ========= */
+function doSearch(){
+  const q=document.getElementById('searchInput').value.trim();
+  const rango=document.getElementById('filterRango').value;
+  const estado=document.getElementById('filterEstado').value;
+  const desde=document.getElementById('filterDesde').value.trim();
+  const hasta=document.getElementById('filterHasta').value.trim();
+  searchQuery=q;
+  if(!q&&!rango&&!estado) return;
+  const list=document.getElementById('resultsList');
+  list.innerHTML='<div class="loading"><div class="spinner"></div> Buscando...</div>';
+  const t0=Date.now();
+  fetch('/api/search?'+new URLSearchParams({q,rango,estado,desde,hasta})).then(r=>r.json()).then(d=>{
+    document.getElementById('resultsCount').textContent=d.total+' resultado'+(d.total!==1?'s':'');
+    document.getElementById('resultsTime').textContent=((Date.now()-t0)/1000).toFixed(2)+'s';
+    if(!d.results.length){list.innerHTML='<div class="no-results">Sin resultados</div>';return;}
+    list.innerHTML=d.results.map(r=>`
+      <div class="result-item" onclick="navigateLaw('${r.id}')" id="item-${r.id}">
+        <div class="result-titulo">${hl(r.titulo,q)}</div>
+        <div class="result-meta">
+          <span class="badge badge-rango">${fmtR(r.rango)}</span>
+          <span class="badge badge-${r.estado}">${r.estado}</span>
+          <span class="badge badge-date">${r.fecha_publicacion}</span>
+        </div>
+        ${r.snippet?`<div class="snippet">${hl(r.snippet,q)}</div>`:''}
+      </div>`).join('');
+  });
+}
+
+/* ========= NAVIGATION WITH BREADCRUMBS ========= */
+function navigateLaw(id, pushToStack=true){
+  if(pushToStack){
+    if(!navStack.length || navStack[navStack.length-1].id !== id){
+      navStack.push({id, label: id});
+    }
+  }
+  loadLaw(id);
+}
+
+function navBack(index){
+  navStack = navStack.slice(0, index+1);
+  loadLaw(navStack[index].id);
+}
+
+function renderBreadcrumbs(){
+  if(navStack.length <= 1) return '';
+  return `<div class="breadcrumbs">${navStack.map((n,i)=>{
+    const isLast = i === navStack.length-1;
+    const label = n.label.length > 40 ? n.label.slice(0,37)+'...' : n.label;
+    return (i>0?'<span class="bc-sep">&#9654;</span>':'')+
+      `<span class="bc-item ${isLast?'active':''}" ${isLast?'':`onclick="navBack(${i})"`} title="${esc(n.label)}">${esc(label)}</span>`;
+  }).join('')}</div>`;
+}
+
+/* ========= LOAD LAW ========= */
+function loadLaw(id){
+  document.querySelectorAll('.result-item').forEach(el=>el.classList.remove('active'));
+  const item=document.getElementById('item-'+id);
+  if(item) item.classList.add('active');
+  currentTab='texto'; currentHistory=[];
+  document.getElementById('contentPanel').innerHTML='<div class="loading"><div class="spinner"></div> Cargando...</div>';
+  fetch('/api/law/'+id).then(r=>r.json()).then(data=>{
+    currentLaw={id,...data};
+    // Update navStack label
+    if(navStack.length) navStack[navStack.length-1].label = data.meta.titulo || id;
+    renderLawPanel(data);
+  });
+}
+
+function renderLawPanel(data){
+  const m=data.meta, p=document.getElementById('contentPanel');
+  p.innerHTML=`
+    ${renderBreadcrumbs()}
+    <div class="content-header">
+      <div class="content-title">${esc(m.titulo||currentLaw.id)}</div>
+      <div class="content-meta">
+        <span class="badge badge-rango">${fmtR(m.rango)}</span>
+        <span class="badge badge-${m.estado}">${m.estado}</span>
+        <span class="badge badge-date">${m.fecha_publicacion}</span>
+        ${m.ultima_actualizacion?`<span class="badge badge-date">Act. ${m.ultima_actualizacion}</span>`:''}
+        ${m.fuente?`<a class="fuente-link" href="${m.fuente}" target="_blank">&#128279; BOE</a>`:''}
+      </div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" id="tab-texto" onclick="switchTab('texto')">&#128196; Texto</div>
+      <div class="tab" id="tab-historia" onclick="switchTab('historia')">&#128337; Reformas</div>
+      <div class="tab" id="tab-diff" onclick="switchTab('diff')">&#9889; Diff</div>
+      <div class="tab" id="tab-rel" onclick="switchTab('rel')">&#128279; Relaciones</div>
+    </div>
+    <div class="tab-content" id="tabContent"></div>`;
+  renderTexto(data.body);
+}
+
+function switchTab(t){
+  currentTab=t;
+  const tc=document.getElementById('tabContent');
+  if(tc){tc.style.padding='';tc.style.overflow='';}
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  if(t==='texto') renderTexto(currentLaw.body);
+  else if(t==='historia') loadHistory();
+  else if(t==='diff') renderDiffSel();
+  else if(t==='rel') loadRelations();
+}
+
+/* ========= TEXTO ========= */
+function renderTexto(body){
+  const el=document.getElementById('tabContent'); if(!el) return;
+  el.innerHTML=`${buildToc(body)}<div class="law-body">${mdHtml(body)}</div>`;
+}
+function mdHtml(md){
+  let h='',sid=0;
+  for(let line of md.split(/\r?\n/)){
+    if(/^# (.+)/.test(line)){h+=`<h1 id="s${sid++}">${fi(line.slice(2))}</h1>`;continue;}
+    if(/^## (.+)/.test(line)){h+=`<h2 id="s${sid++}">${fi(line.slice(3))}</h2>`;continue;}
+    if(/^### (.+)/.test(line)){h+=`<h3 id="s${sid++}">${fi(line.slice(4))}</h3>`;continue;}
+    if(/^Art[ií]culo\s+\d+/i.test(line)){const m=line.match(/^(Art[ií]culo\s+\d+[^.]*?)\.?\s*(.*)/i);h+=`<div class="art-heading" id="s${sid++}"><span class="art-num">${esc(m[1])}.</span> ${fi(m[2]||'')}</div>`;continue;}
+    if(/^Disposici[oó]n/i.test(line)){h+=`<div class="art-heading" id="s${sid++}" style="border-left-color:var(--yellow)">${fi(line)}</div>`;continue;}
+    if(!line.trim()) continue;
+    h+=`<p>${fi(line)}</p>`;
+  }
+  if(searchQuery){h=h.replace(new RegExp('('+searchQuery.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark>$1</mark>');}
+  return h;
+}
+function fi(s){return esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>');}
+function buildToc(md){
+  let t='',id=0;
+  for(const l of md.split(/\r?\n/)){
+    if(/^# /.test(l)){t+=`<a class="toc-item" onclick="document.getElementById('s${id}')?.scrollIntoView({behavior:'smooth'})">${esc(l.slice(2))}</a>`;id++;}
+    else if(/^## /.test(l)){t+=`<a class="toc-item toc-l2" onclick="document.getElementById('s${id}')?.scrollIntoView({behavior:'smooth'})">${esc(l.slice(3))}</a>`;id++;}
+    else if(/^###/.test(l)||/^Art[ií]culo/i.test(l)||/^Disposici[oó]n/i.test(l)) id++;
+  }
+  return t?`<div class="toc"><div class="toc-title">Indice</div>${t}</div>`:'';
+}
+
+/* ========= RELATIONS ========= */
+let currentRelData = null;
+function loadRelations(){
+  const el=document.getElementById('tabContent');
+  el.innerHTML='<div class="loading"><div class="spinner"></div> Analizando relaciones normativas...</div>';
+  fetch('/api/law/'+currentLaw.id+'/relations').then(r=>r.json()).then(data=>{
+    currentRelData = data;
+    renderRelations(data);
+    enrichEuRefs(data);
+    setTimeout(()=> renderMindmap(data), 100);
+  });
+}
+
+function renderRelations(data){
+  const el=document.getElementById('tabContent');
+  const {nodes, edges, rawRefs, totalRefs} = data;
+
+  // Categorize
+  const boeNodes = nodes.filter(n=>!n.isCenter && n.inDatabase && !n.isReverse);
+  const reverseNodes = nodes.filter(n=>!n.isCenter && n.isReverse);
+  const euNodes = nodes.filter(n=>!n.isCenter && !n.inDatabase && (n.refType==='eu'));
+  const intlNodes = nodes.filter(n=>!n.isCenter && !n.inDatabase && n.refType==='intl');
+  const otherExt = nodes.filter(n=>!n.isCenter && !n.inDatabase && n.refType!=='eu' && n.refType!=='intl');
+  const l2Nodes = nodes.filter(n=>n.level===2);
+
+  // Sort by importance: rango weight then year
+  const rangoWeight = {constitucion:0, ley_organica:1, ley:2, real_decreto_legislativo:3, real_decreto_ley:4, real_decreto:5, orden:6};
+  const sortFn = (a,b)=> {
+    const wa = rangoWeight[a.rango] ?? 10, wb = rangoWeight[b.rango] ?? 10;
+    if(wa !== wb) return wa - wb;
+    return (b.fecha||'').localeCompare(a.fecha||'');
+  };
+  boeNodes.sort(sortFn);
+  reverseNodes.sort(sortFn);
+  euNodes.sort((a,b)=>(b.fecha||b.id||'').localeCompare(a.fecha||a.id||''));
+
+  const totalBoe = boeNodes.length, totalEu = euNodes.length, totalIntl = intlNodes.length;
+
+  const allRelNodes = [...boeNodes,...euNodes,...intlNodes,...reverseNodes,...otherExt].length;
+  el.style.padding='0'; el.style.overflow='hidden';
+  el.innerHTML=`<div class="rel-with-mindmap">
+    <div class="rel-list-panel">
+    <div style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:600;color:var(--text-bright);margin-bottom:6px">Mapa de relaciones normativas</div>
+      <div style="font-size:11px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap">
+        <span><strong style="color:var(--text-bright)">${totalRefs}</strong> referencias</span>
+        <span><strong style="color:var(--accent)">${totalBoe}</strong> BOE</span>
+        <span><strong style="color:#6699ff">${totalEu}</strong> UE</span>
+        <span><strong style="color:var(--yellow)">${totalIntl}</strong> intl</span>
+        <span><strong style="color:var(--green)">${reverseNodes.length}</strong> inversas</span>
+      </div>
+    </div>
+
+    ${boeNodes.length?`
+    <div class="rel-section" style="padding:0 0 14px">
+      <div class="rel-section-title boe">&#9878; Legislacion espanola referenciada <span class="count">${boeNodes.length}</span></div>
+      ${boeNodes.map(n=>`
+        <div class="rel-card boe-card" onclick="navigateLaw('${n.id}')">
+          <div class="rel-card-title">${esc(n.label)}</div>
+          <div class="rel-card-meta">
+            <span class="badge badge-rango">${fmtR(n.rango)}</span>
+            <span class="badge badge-${n.estado}">${n.estado}</span>
+            <span class="badge badge-date">${n.fecha}</span>
+            ${n.level===2?'<span class="badge badge-id">Nivel 2</span>':''}
+          </div>
+        </div>`).join('')}
+    </div>`:''}
+
+    ${euNodes.length?`
+    <div class="rel-section" style="padding:0 0 14px">
+      <div class="rel-section-title eu">&#127466;&#127482; Derecho de la Union Europea <span class="count">${euNodes.length}</span></div>
+      ${euNodes.map(n=>`
+        <div class="rel-card eu-card" id="eu-card-${(n.celex||n.id).replace(/[^a-zA-Z0-9]/g,'_')}">
+          <div class="rel-card-title">${esc(n.label)}</div>
+          ${n.celex?`<div style="font-size:9.5px;color:var(--muted);font-family:var(--mono);margin:2px 0">CELEX: ${n.celex}</div>`:''}
+          <div class="eu-title-resolved" id="eu-title-${(n.celex||n.id).replace(/[^a-zA-Z0-9]/g,'_')}"></div>
+          <div class="rel-card-meta">
+            <span class="badge badge-eu">${n.subtype||'EU'}</span>
+            ${n.fecha?`<span class="badge badge-date">${n.fecha}</span>`:''}
+          </div>
+          <div class="rel-card-links">
+            ${n.url?`<a href="${n.url}" target="_blank" class="link-eurlex">&#127466;&#127482; EUR-Lex</a>`:''}
+            ${n.htmlUrl?`<a href="${n.htmlUrl}" target="_blank" class="link-html">HTML</a>`:''}
+            ${n.pdfUrl?`<a href="${n.pdfUrl}" target="_blank" class="link-pdf">PDF</a>`:''}
+            ${n.eli?`<a href="${n.eli}" target="_blank" class="link-eurlex">ELI</a>`:''}
+          </div>
+        </div>`).join('')}
+    </div>`:''}
+
+    ${intlNodes.length?`
+    <div class="rel-section" style="padding:0 0 14px">
+      <div class="rel-section-title intl">&#127760; Convenios internacionales <span class="count">${intlNodes.length}</span></div>
+      ${intlNodes.map(n=>`
+        <div class="rel-card intl-card">
+          <div class="rel-card-title">${esc(n.label)}</div>
+          <div class="rel-card-links">
+            ${n.url?`<a href="${n.url}" target="_blank" class="link-eurlex">&#128269; Buscar</a>`:''}
+          </div>
+        </div>`).join('')}
+    </div>`:''}
+
+    ${reverseNodes.length?`
+    <div class="rel-section" style="padding:0 0 14px">
+      <div class="rel-section-title reverse">&#8592; Normas que citan esta ley <span class="count">${reverseNodes.length}</span></div>
+      ${reverseNodes.map(n=>`
+        <div class="rel-card reverse-card" onclick="navigateLaw('${n.id}')">
+          <div class="rel-card-title">${esc(n.label)}</div>
+          <div class="rel-card-meta">
+            <span class="badge badge-rango">${fmtR(n.rango)}</span>
+            <span class="badge badge-${n.estado}">${n.estado}</span>
+            <span class="badge badge-date">${n.fecha}</span>
+          </div>
+        </div>`).join('')}
+    </div>`:''}
+
+    ${otherExt.length?`
+    <div class="rel-section" style="padding:0 0 14px">
+      <div class="rel-section-title" style="color:var(--muted-light)">Otras referencias <span class="count">${otherExt.length}</span></div>
+      ${otherExt.map(n=>`
+        <div class="rel-card">
+          <div class="rel-card-title">${esc(n.label)}</div>
+          ${n.url?`<div class="rel-card-links"><a href="${n.url}" target="_blank" class="link-boe">&#128279; Ver</a></div>`:''}
+        </div>`).join('')}
+    </div>`:''}
+    </div><!-- /rel-list-panel -->
+    <div class="mm-panel">
+      <div class="mm-header">&#128340; Mindmap normativo <span class="count">${allRelNodes} nodos</span></div>
+      <div class="mm-canvas" id="mmCanvas"></div>
+      <div class="mm-legend">
+        <div class="mm-legend-item"><div class="mm-legend-dot" style="background:var(--accent)"></div>BOE</div>
+        <div class="mm-legend-item"><div class="mm-legend-dot" style="background:#6699ff"></div>UE</div>
+        <div class="mm-legend-item"><div class="mm-legend-dot" style="background:var(--yellow)"></div>Intl</div>
+        <div class="mm-legend-item"><div class="mm-legend-dot" style="background:var(--green)"></div>Inversas</div>
+        <div class="mm-legend-item"><div class="mm-legend-dot" style="background:var(--accent2)"></div>Nivel 2</div>
+      </div>
+      <div class="mm-tooltip" id="mmTooltip"></div>
+    </div>
+  </div><!-- /rel-with-mindmap -->`;
+}
+
+/* ========= EUR-LEX SPARQL ENRICHMENT ========= */
+function enrichEuRefs(data){
+  const euNodes = data.nodes.filter(n=>n.celex);
+  if(!euNodes.length) return;
+  const ids = euNodes.map(n=>n.celex);
+
+  fetch('/api/eurlex/batch', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({celexIds: ids})
+  }).then(r=>r.json()).then(resp=>{
+    for(const [celex, info] of Object.entries(resp.results)){
+      const key = celex.replace(/[^a-zA-Z0-9]/g,'_');
+      const titleEl = document.getElementById('eu-title-'+key);
+      if(titleEl && info.found){
+        let html = '';
+        if(info.title) html += `<span>${esc(info.title)}</span>`;
+        if(info.date) html += ` <span style="color:var(--muted);font-size:9px">(${info.date.slice(0,10)})</span>`;
+        html += info.inForce
+          ? ' <span class="eu-status in-force">&#9679; En vigor</span>'
+          : ' <span class="eu-status not-force">&#9675; No vigente</span>';
+        titleEl.innerHTML = html;
+      } else if(titleEl) {
+        titleEl.innerHTML = '<span style="color:var(--muted);font-size:10px">No encontrado en SPARQL</span>';
+      }
+    }
+  }).catch(()=>{});
+}
+
+/* ========= HISTORY ========= */
+function loadHistory(){
+  const el=document.getElementById('tabContent');
+  el.innerHTML='<div class="loading"><div class="spinner"></div> Cargando historial...</div>';
+  fetch('/api/law/'+currentLaw.id+'/history').then(r=>r.json()).then(d=>{
+    currentHistory=d.commits; renderHist(d.commits);
+  });
+}
+function renderHist(commits){
+  const el=document.getElementById('tabContent');
+  if(!commits.length){el.innerHTML='<div class="no-results">Sin historial</div>';return;}
+  el.innerHTML=`<div style="font-size:11px;color:var(--muted);margin-bottom:12px">${commits.length} versiones</div>
+    <div class="timeline">${commits.map(c=>{
+      const boot=c.subject.includes('[bootstrap]');
+      const arts=c.articulos?c.articulos.split(', ').slice(0,10):[];
+      const subj=c.subject.replace(/\[(reforma|bootstrap)\]\s*/,'');
+      return `<div class="commit-item"><div class="commit-dot ${boot?'bootstrap':''}">${boot?'1':'R'}</div><div class="commit-body"><div class="commit-header"><span class="commit-date">${c.date}</span>${c.disposicion?`<span class="badge badge-id">${c.disposicion}</span>`:''} ${boot?'<span class="badge badge-vigente">Original</span>':'<span class="badge badge-rango">Reforma</span>'}</div><div class="commit-detail"><strong>${esc(subj)}</strong>${arts.length?`<div class="commit-arts">${arts.map(a=>`<span class="art-tag">${esc(a)}</span>`).join('')}</div>`:''} ${!boot?`<div style="margin-top:6px"><button class="btn btn-sm btn-green" onclick="loadDiff('${c.hash}','${c.date}')">Ver cambios</button></div>`:''}</div></div></div>`;
+    }).join('')}</div>`;
+}
+
+/* ========= DIFF ========= */
+function loadDiff(hash,date){
+  switchTab('diff');
+  const el=document.getElementById('tabContent');
+  el.innerHTML='<div class="loading"><div class="spinner"></div> Generando diff...</div>';
+  fetch('/api/law/'+currentLaw.id+'/diff/'+hash).then(r=>r.json()).then(d=>renderDiff(d.diff,date));
+}
+function renderDiffSel(){
+  const el=document.getElementById('tabContent');
+  if(!currentHistory.length){loadHistory();return;}
+  const r=currentHistory.filter(c=>!c.subject.includes('[bootstrap]'));
+  if(!r.length){el.innerHTML='<div class="no-results">Solo version original</div>';return;}
+  el.innerHTML=`<div style="font-size:11px;color:var(--muted);margin-bottom:12px">Selecciona una reforma</div>
+    <div class="timeline">${r.map(c=>`<div class="commit-item"><div class="commit-dot">R</div><div class="commit-body"><div class="commit-header"><span class="commit-date">${c.date}</span></div><div class="commit-detail"><button class="btn btn-sm btn-green" onclick="loadDiff('${c.hash}','${c.date}')">Ver cambios</button></div></div></div>`).join('')}</div>`;
+}
+function renderDiff(raw,date){
+  const el=document.getElementById('tabContent');
+  const lines=raw.split('\n'); let ac=0,rc=0; const dl=[];
+  let inD=false;
+  for(const l of lines){
+    if(l.startsWith('diff --git')){inD=true;continue;}
+    if(!inD) continue;
+    if(l.startsWith('index ')||l.startsWith('Binary')) continue;
+    if(l.startsWith('+++')||l.startsWith('---')){dl.push({t:'m',x:l});continue;}
+    if(l.startsWith('@@')){dl.push({t:'h',x:l});continue;}
+    if(l.startsWith('+')){ac++;dl.push({t:'a',x:l.slice(1)});continue;}
+    if(l.startsWith('-')){rc++;dl.push({t:'r',x:l.slice(1)});continue;}
+    dl.push({t:'c',x:l.startsWith(' ')?l.slice(1):l});
+  }
+  el.innerHTML=`
+    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center">
+      <button class="btn btn-sm btn-ghost" onclick="renderDiffSel()">&larr; Volver</button>
+      <span class="badge badge-date">${date}</span>
+    </div>
+    <div class="diff-viewer"><div class="diff-header"><span style="color:var(--text-bright);font-weight:600">Cambios</span><div class="diff-stats"><span style="color:var(--green)">+${ac}</span><span style="color:var(--red)">-${rc}</span></div></div><div class="diff-body">${dl.map(d=>{
+      if(d.t==='m') return `<div class="diff-line" style="color:var(--muted)"><span class="diff-sign"></span><span class="diff-text">${esc(d.x)}</span></div>`;
+      if(d.t==='h') return `<div class="diff-line hunk"><span class="diff-sign"></span><span class="diff-text">${esc(d.x)}</span></div>`;
+      if(d.t==='a') return `<div class="diff-line added"><span class="diff-sign plus">+</span><span class="diff-text">${esc(d.x)}</span></div>`;
+      if(d.t==='r') return `<div class="diff-line removed"><span class="diff-sign minus">&minus;</span><span class="diff-text">${esc(d.x)}</span></div>`;
+      return `<div class="diff-line"><span class="diff-sign"></span><span class="diff-text">${esc(d.x)}</span></div>`;
+    }).join('')}</div></div>`;
+}
+
+/* ========= MINDMAP ENGINE ========= */
+function renderMindmap(data){
+  const canvas = document.getElementById('mmCanvas');
+  if(!canvas) return;
+  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+  if(W < 50 || H < 50) return;
+
+  const {nodes, edges} = data;
+  const center = nodes.find(n=>n.isCenter);
+  if(!center) return;
+
+  // Categorize nodes for coloring
+  const colorMap = n => {
+    if(n.isCenter) return 'var(--accent)';
+    if(n.isReverse) return 'var(--green)';
+    if(n.refType==='eu') return '#6699ff';
+    if(n.refType==='intl') return 'var(--yellow)';
+    if(n.level===2) return 'var(--accent2)';
+    return 'var(--accent)';
+  };
+
+  const hslFromStr = s => { let h=0; for(let i=0;i<s.length;i++) h=s.charCodeAt(i)+((h<<5)-h); return `hsl(${h%360},75%,60%)`; };
+
+  // Separate level 1 and level 2 nodes
+  const l1 = nodes.filter(n=>!n.isCenter && n.level===1);
+  const l2 = nodes.filter(n=>n.level===2);
+
+  const cx = W/2, cy = H/2;
+
+  // Elliptical layout for level 1 (like Infinite_mindmap)
+  const rxL1 = Math.max(120, W*0.38);
+  const ryL1 = Math.max(90, H*0.36);
+  const arcRange = (16/9)*Math.PI; // 320 degrees
+
+  const posMap = {};
+  posMap[center.id] = {x:cx, y:cy};
+
+  l1.forEach((n,i)=>{
+    const total = l1.length;
+    let angle;
+    if(total<=1){ angle=-Math.PI/2; }
+    else {
+      const start = -Math.PI/2 - arcRange/2;
+      const step = arcRange/(total-1);
+      angle = start + i*step;
+    }
+    posMap[n.id] = { x: cx + rxL1*Math.cos(angle), y: cy + ryL1*Math.sin(angle) };
+  });
+
+  // Level 2 nodes radiate from their parent
+  l2.forEach((n,i)=>{
+    const parentEdge = edges.find(e=>e.to===n.id);
+    const parentId = parentEdge ? parentEdge.from : center.id;
+    const pp = posMap[parentId] || {x:cx,y:cy};
+    const pAngle = Math.atan2(pp.y-cy, pp.x-cx);
+    const tRadius = 70;
+    const siblings = l2.filter(nn=>edges.find(e=>e.to===nn.id)?.from===parentId);
+    const si = siblings.indexOf(n);
+    const sTotal = siblings.length;
+    const spread = Math.PI*0.5;
+    const a = pAngle - spread/2 + (sTotal>1 ? (si/(sTotal-1))*spread : 0);
+    posMap[n.id] = { x: pp.x + tRadius*Math.cos(a), y: pp.y + tRadius*Math.sin(a) };
+  });
+
+  // Build SVG lines
+  let svgLines = '';
+  edges.forEach((e,i)=>{
+    const from = posMap[e.from], to = posMap[e.to];
+    if(!from||!to) return;
+    const isL2 = nodes.find(n=>n.id===e.to)?.level===2;
+    const isCross = e.type==='referenced_by';
+    const fromNode = nodes.find(n=>n.id===e.from);
+    const toNode = nodes.find(n=>n.id===e.to);
+    const col = isCross ? 'var(--green)' : colorMap(toNode||{});
+
+    if(isCross){
+      // Bezier curve
+      const mx=(from.x+to.x)/2, my=(from.y+to.y)/2;
+      const vx=mx-cx, vy=my-cy;
+      const len=Math.sqrt(vx*vx+vy*vy)||1;
+      const cf=40;
+      const ccx=mx+(vx/len)*cf, ccy=my+(vy/len)*cf;
+      svgLines+=`<path d="M ${from.x} ${from.y} Q ${ccx} ${ccy} ${to.x} ${to.y}" class="mm-connector cross" stroke="${col}" style="animation-delay:${i*30}ms" marker-end="url(#mmArrow)"/>`;
+    } else {
+      svgLines+=`<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" class="mm-connector ${isL2?'secondary':'primary'}" stroke="${col}" style="animation-delay:${i*30}ms"/>`;
+    }
+  });
+
+  // Build node elements
+  let nodesHtml = '';
+
+  // Center node
+  const cLabel = center.label.length > 40 ? center.label.split(',')[0] : center.label;
+  nodesHtml += `<div class="mm-node" style="left:${cx}px;top:${cy}px;animation-delay:0.1s;cursor:default" data-id="${esc(center.id)}" data-full="${esc(center.label)}"><div class="mm-node-center">${esc(cLabel.length>30?cLabel.slice(0,27)+'...':cLabel)}</div></div>`;
+
+  // L1 + L2 nodes
+  [...l1,...l2].forEach((n,i)=>{
+    const p = posMap[n.id];
+    if(!p) return;
+    const col = colorMap(n);
+    const isL2 = n.level===2;
+    const cls = isL2 ? 'mm-node-tertiary' : '';
+    const shortLabel = n.label.length > 25 ? n.label.split(',')[0].slice(0,22)+'...' : n.label.split(',')[0];
+    const clickable = n.inDatabase ? `onclick="navigateLaw('${n.id}')"` : (n.url ? `onclick="window.open('${n.url}','_blank')"` : '');
+
+    nodesHtml += `<div class="mm-node ${cls}" style="left:${p.x}px;top:${p.y}px;animation-delay:${0.15+i*0.05}s" ${clickable}
+      data-id="${esc(n.id)}" data-full="${esc(n.label)}" data-rango="${esc(n.rango||'')}" data-estado="${esc(n.estado||'')}" data-fecha="${esc(n.fecha||'')}" data-type="${n.refType||'boe'}" data-in-db="${n.inDatabase?'1':'0'}"
+      onmouseenter="showMmTooltip(event,this)" onmouseleave="hideMmTooltip()">
+      <div class="mm-node-circle" style="border-color:${col}">${esc(shortLabel)}</div>
+    </div>`;
+  });
+
+  canvas.innerHTML = `
+    <svg style="position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;z-index:1">
+      <defs>
+        <marker id="mmArrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="var(--green)"/>
+        </marker>
+      </defs>
+      ${svgLines}
+    </svg>
+    ${nodesHtml}
+  `;
+}
+
+function showMmTooltip(ev, el){
+  const tip = document.getElementById('mmTooltip');
+  if(!tip) return;
+  const full = el.dataset.full || '';
+  const rango = el.dataset.rango || '';
+  const estado = el.dataset.estado || '';
+  const fecha = el.dataset.fecha || '';
+  const type = el.dataset.type || 'boe';
+  const inDb = el.dataset.inDb === '1';
+
+  let typeLabel = {boe:'BOE',eu:'UE (EUR-Lex)',intl:'Internacional',ley:'BOE',rd:'BOE',orden:'BOE'}[type]||'Referencia';
+
+  tip.innerHTML = `
+    <div class="mm-tooltip-title">${esc(full)}</div>
+    <div class="mm-tooltip-meta">
+      ${rango?`<span class="badge badge-rango">${fmtR(rango)}</span>`:''}
+      ${estado?`<span class="badge badge-${estado}">${estado}</span>`:''}
+      ${fecha?`<span class="badge badge-date">${fecha}</span>`:''}
+      <span class="badge" style="background:var(--surface4);color:var(--muted-light)">${typeLabel}</span>
+      ${inDb?'<span class="badge badge-vigente" style="font-size:8px">Click para abrir</span>':''}
+    </div>
+  `;
+
+  const rect = el.getBoundingClientRect();
+  const panel = el.closest('.mm-panel');
+  const pRect = panel.getBoundingClientRect();
+  let left = rect.left - pRect.left + rect.width/2 - 120;
+  let top = rect.top - pRect.top - tip.offsetHeight - 8;
+  if(top < 5) top = rect.bottom - pRect.top + 8;
+  if(left < 5) left = 5;
+  if(left + 240 > pRect.width) left = pRect.width - 245;
+
+  tip.style.left = left+'px';
+  tip.style.top = top+'px';
+  tip.classList.add('visible');
+}
+
+function hideMmTooltip(){
+  const tip = document.getElementById('mmTooltip');
+  if(tip) tip.classList.remove('visible');
+}
+
+/* ========= UTILS ========= */
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function hl(t,q){const e=esc(t);if(!q)return e;return e.replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark>$1</mark>');}
+function fmtR(r){return{constitucion:'Constitucion',ley_organica:'Ley Organica',ley:'Ley',real_decreto_legislativo:'RD Legislativo',real_decreto_ley:'RD-Ley',real_decreto:'Real Decreto',orden:'Orden',resolucion:'Resolucion',circular:'Circular',decreto:'Decreto',instruccion:'Instruccion',acuerdo_internacional:'Acuerdo Intl'}[r]||r;}
+</script>
+</body>
+</html>
