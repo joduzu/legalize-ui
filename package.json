@@ -4,7 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "test": "node --check server.js",
+    "check:html": "node scripts/check-html.js",
+    "build": "npm run test && npm run check:html",
+    "build:static": "node scripts/build-static-data.js"
   },
   "keywords": [],
   "author": "",
