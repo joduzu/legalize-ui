@@ -2,7 +2,7 @@
 
 Consulta legislativa integrada de **8.642 leyes espanolas** (BOE) con **Derecho de la Union Europea** (EUR-Lex).
 
-Interfaz web local que permite buscar, leer, comparar reformas y explorar relaciones normativas de toda la legislacion espanola consolidada.
+Interfaz web que permite buscar, leer, comparar reformas y explorar relaciones normativas de la legislacion espanola consolidada. Tambien funciona en **GitHub Pages** con un modo estatico demostrativo cuando no hay backend Node.js disponible.
 
 ---
 
@@ -50,8 +50,10 @@ Interfaz web local que permite buscar, leer, comparar reformas y explorar relaci
 ```
 legalize-ui/
   server.js          # Backend Node.js/Express (API REST)
+  data/laws.json     # Datos estaticos generados para GitHub Pages
   public/
     index.html       # Frontend SPA (vanilla JS, CSS custom)
+    data/laws.json   # Copia de datos estaticos para Express local
   package.json       # Dependencia unica: express
 ```
 
@@ -72,6 +74,19 @@ legalize-ui/
 
 - **BOE**: Repositorio [legalize-es](https://github.com/legalize-dev/legalize-es) (8.642 leyes en Markdown con frontmatter YAML, historial git de reformas)
 - **EUR-Lex**: API SPARQL publica (`publications.europa.eu/webapi/rdf/sparql`) + URLs directas ELI
+
+---
+
+## GitHub Pages
+
+Este repositorio ya incluye una configuracion lista para publicar en GitHub Pages mediante GitHub Actions.
+
+1. Sube los cambios a la rama `main`.
+2. En GitHub, abre **Settings > Pages**.
+3. En **Build and deployment**, selecciona **GitHub Actions**.
+4. Ejecuta el workflow **Deploy to GitHub Pages** o espera al siguiente `push` a `main`.
+
+La version publicada sirve `index.html` desde la raiz del repositorio. Como GitHub Pages no ejecuta `server.js`, el workflow clona `legalize-dev/legalize-es`, genera `data/laws.json` y el frontend detecta `github.io` para buscar y abrir leyes desde ese JSON estatico. El backend local sigue ofreciendo funciones dinamicas como historial Git completo, diffs reales y consultas EUR-Lex en vivo.
 
 ---
 
